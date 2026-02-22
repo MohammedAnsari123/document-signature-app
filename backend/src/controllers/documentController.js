@@ -201,7 +201,7 @@ const shareDocument = async (req, res) => {
 
         // Define frontend URL for the email link
         // Uses origin header if available (production frontend), otherwise defaults to localhost:5173
-        const frontendUrl = req.headers.origin || 'http://localhost:5173';
+        const frontendUrl = 'https://document-signature-app-eight.vercel.app';
         const shareLink = `${frontendUrl}/share/${shareToken}`;
 
         // ── 3. Try to send email (non-blocking — failure is logged, not thrown) ─
