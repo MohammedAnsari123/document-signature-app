@@ -21,7 +21,9 @@ const uploadDocument = async (req, res) => {
             resource_type: 'raw',
             folder: 'docsign_uploads',
             use_filename: true,
-            unique_filename: true
+            unique_filename: true,
+            access_mode: 'public',
+            flags: 'attachment'
         });
 
         const doc = await Document.create({
@@ -168,7 +170,9 @@ const finalizeDocument = async (req, res) => {
             resource_type: 'raw',
             folder: 'docsign_signed',
             use_filename: true,
-            unique_filename: true
+            unique_filename: true,
+            access_mode: 'public',
+            flags: 'attachment'
         });
 
         doc.status = 'Signed';
