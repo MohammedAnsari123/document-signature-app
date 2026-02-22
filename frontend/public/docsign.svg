@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#1e3a5f"/>
+  <!-- Document body -->
+  <rect x="14" y="8" width="30" height="38" rx="3" fill="white"/>
+  <!-- Document fold corner -->
+  <path d="M36 8 L44 16 L36 16 Z" fill="#c8d9ed"/>
+  <rect x="36" y="8" width="8" height="8" rx="0" fill="#c8d9ed"/>
+  <!-- Lines on document -->
+  <rect x="18" y="22" width="18" height="2.5" rx="1" fill="#93c5fd"/>
+  <rect x="18" y="28" width="14" height="2.5" rx="1" fill="#93c5fd"/>
+  <!-- Signature stroke -->
+  <path d="M12 50 Q18 42 24 50 Q30 58 38 44 Q42 38 50 40" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Pen dot -->
+  <circle cx="50" cy="40" r="2.5" fill="#60a5fa"/>
+</svg>
