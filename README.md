@@ -261,7 +261,7 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
 ---
 
-## 1️⃣3️⃣ Future Improvements
+## 1️⃣2️⃣ Future Improvements
 
 * **Multi-signer Workflow**: Advanced sequential signing workflows (e.g., Person A must sign, then Person B).
 * **Document Encryption**: Encrypting PDF buffers at rest using AES-256 before writing to storage.
@@ -271,14 +271,14 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
 ---
 
-## 1️⃣4️⃣ License
+## 1️⃣3️⃣ License
 
 **MIT License** - Free to use, modify, and distribute for educational or commercial purposes.
 
 ---
 
-## 1️⃣5️⃣ Author
+## 1️⃣4️⃣ Author
 
 **ANSARI MOHAMMED**  
-[GitHub Profile](https://github.com/yourusername)  
-Contact: your.email@example.com
+[GitHub Profile](https://github.com/MohammedAnsari123/)  
+
