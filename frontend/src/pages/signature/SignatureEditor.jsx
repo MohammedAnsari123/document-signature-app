@@ -273,7 +273,7 @@ const SignDocument = () => {
     if (loading) return <div className="p-10 text-center">Loading...</div>;
     if (!doc) return <div className="p-10 text-center">Document not found</div>;
 
-    const fileUrl = `http://localhost:5000/${doc.filePath.replace('\\', '/')}`;
+    const fileUrl = `https://document-signature-app-u1zd.onrender.com/${doc.filePath.replace('\\', '/')}`;
 
     return (
         <div className="min-h-screen bg-gray-100">

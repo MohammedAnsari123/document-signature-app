@@ -198,7 +198,11 @@ const shareDocument = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
-        const shareLink = `http://localhost:5173/share/${shareToken}`;
+
+        // Define frontend URL for the email link
+        // Uses origin header if available (production frontend), otherwise defaults to localhost:5173
+        const frontendUrl = req.headers.origin || 'http://localhost:5173';
+        const shareLink = `${frontendUrl}/share/${shareToken}`;
 
         // ── 3. Try to send email (non-blocking — failure is logged, not thrown) ─
         let emailSent = false;
