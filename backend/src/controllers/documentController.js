@@ -4,8 +4,6 @@ const { PDFDocument, rgb } = require('pdf-lib');
 const Document = require('../models/Document');
 const sendEmail = require('../services/emailService');
 const jwt = require('jsonwebtoken');
-const cloudinary = require('../config/cloudinary');
-const axios = require('axios');
 
 // @desc    Upload a PDF document
 // @route   POST /api/docs/upload
@@ -16,29 +14,11 @@ const uploadDocument = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        // Upload the file to Cloudinary
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            resource_type: 'image',
-            folder: 'docsign_uploads',
-            use_filename: true,
-            unique_filename: true,
-            access_mode: 'public',
-            flags: 'attachment'
-        });
-
         const doc = await Document.create({
             fileName: req.file.originalname,
-            filePath: result.secure_url,
-            cloudinaryId: result.public_id,
+            filePath: req.file.path,
             ownerId: req.user._id,
         });
-
-        // Delete local temp file
-        try {
-            fs.unlinkSync(req.file.path);
-        } catch (e) {
-            console.warn('Could not delete temp file:', e.message);
-        }
 
         // Log audit
         await require('../middleware/auditMiddleware')('Uploaded', doc._id, req.user._id, `Uploaded from ${req.ip}`);
@@ -109,9 +89,8 @@ const finalizeDocument = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        // Fetch the PDF from Cloudinary URL instead of local disk
-        const response = await axios.get(doc.filePath, { responseType: 'arraybuffer' });
-        const existingPdfBytes = response.data;
+        // Read existing PDF from local uploads
+        const existingPdfBytes = fs.readFileSync(path.resolve(doc.filePath));
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const pages = pdfDoc.getPages();
 
@@ -159,35 +138,15 @@ const finalizeDocument = async (req, res) => {
             }
         }
 
-        // Save the modified PDF locally first
+        // Save modified PDF locally
         const pdfBytes = await pdfDoc.save();
-        const signedFilename = `signed-${doc._id}.pdf`;
-        const tempSignedPath = path.join('uploads', signedFilename);
-        fs.writeFileSync(tempSignedPath, pdfBytes);
-
-        // Upload signed version to Cloudinary
-        const result = await cloudinary.uploader.upload(tempSignedPath, {
-            resource_type: 'image',
-            folder: 'docsign_signed',
-            use_filename: true,
-            unique_filename: true,
-            access_mode: 'public',
-            flags: 'attachment'
-        });
+        const signedFilename = `signed-${doc.fileName}`;
+        const signedPath = path.join('uploads', signedFilename);
+        fs.writeFileSync(signedPath, pdfBytes);
 
         doc.status = 'Signed';
-        doc.signedPath = result.secure_url;
-        doc.signedCloudinaryId = result.public_id;
+        doc.signedPath = signedPath;
         doc.signatureConfig = position || (items[0] || {});
-
-        await doc.save();
-
-        // Cleanup local signed copy
-        try {
-            fs.unlinkSync(tempSignedPath);
-        } catch (e) {
-            console.warn('Could not delete temp signed file:', e.message);
-        }
 
         await doc.save();
 
@@ -434,18 +393,10 @@ const resetSignatures = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        // Delete the signed PDF file from Cloudinary and local (if any)
-        if (doc.signedCloudinaryId) {
+        // Delete the signed PDF file from local storage
+        if (doc.signedPath && fs.existsSync(path.resolve(doc.signedPath))) {
             try {
-                await cloudinary.uploader.destroy(doc.signedCloudinaryId, { resource_type: 'image' });
-            } catch (e) {
-                console.warn('Could not remove signed file from Cloudinary:', e.message);
-            }
-        }
-        if (doc.signedPath && !doc.signedPath.startsWith('http')) {
-            try {
-                const abs = path.resolve(doc.signedPath);
-                if (fs.existsSync(abs)) fs.unlinkSync(abs);
+                fs.unlinkSync(path.resolve(doc.signedPath));
             } catch (e) {
                 console.warn('Could not remove local signed file:', e.message);
             }
@@ -453,7 +404,6 @@ const resetSignatures = async (req, res) => {
 
         // Reset doc back to Pending
         doc.signedPath = null;
-        doc.signedCloudinaryId = undefined;
         doc.signatureConfig = null;
         doc.status = 'Pending';
         await doc.save();
@@ -484,15 +434,8 @@ const deleteDocument = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        // Delete original file from Cloudinary
-        if (doc.cloudinaryId) {
-            try {
-                await cloudinary.uploader.destroy(doc.cloudinaryId, { resource_type: 'image' });
-            } catch (e) {
-                console.warn('Could not remove original file from Cloudinary:', e.message);
-            }
-        } else if (doc.filePath && !doc.filePath.startsWith('http')) {
-            // Fallback for old local files
+        // Delete original file
+        if (doc.filePath) {
             try {
                 const filePath = path.resolve(doc.filePath);
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -501,15 +444,8 @@ const deleteDocument = async (req, res) => {
             }
         }
 
-        // Delete signed version from Cloudinary
-        if (doc.signedCloudinaryId) {
-            try {
-                await cloudinary.uploader.destroy(doc.signedCloudinaryId, { resource_type: 'raw' });
-            } catch (e) {
-                console.warn('Could not remove signed file from Cloudinary:', e.message);
-            }
-        } else if (doc.signedPath && !doc.signedPath.startsWith('http')) {
-            // Fallback for old local files
+        // Delete signed version
+        if (doc.signedPath) {
             try {
                 const signedPath = path.resolve(doc.signedPath);
                 if (fs.existsSync(signedPath)) fs.unlinkSync(signedPath);

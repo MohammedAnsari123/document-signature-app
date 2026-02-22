@@ -9,9 +9,6 @@ const DocumentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    cloudinaryId: {
-        type: String,
-    },
     ownerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -31,9 +28,6 @@ const DocumentSchema = new mongoose.Schema({
         }
     }],
     signedPath: {
-        type: String,
-    },
-    signedCloudinaryId: {
         type: String,
     },
     signatureConfig: {

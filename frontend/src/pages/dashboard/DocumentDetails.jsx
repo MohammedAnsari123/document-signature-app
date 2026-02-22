@@ -71,7 +71,7 @@ const DocumentDetails = () => {
         if (!doc) return;
         const path = doc.status === 'Signed' && doc.signedPath ? doc.signedPath : doc.filePath;
         const link = document.createElement('a');
-        link.href = path.startsWith('http') ? path : `https://document-signature-app-u1zd.onrender.com/${path.replace(/\\/g, '/')}`;
+        link.href = `https://document-signature-app-u1zd.onrender.com/${path.replace(/\\/g, '/')}`;
         link.setAttribute('download', doc.fileName);
         document.body.appendChild(link);
         link.click();
@@ -174,7 +174,7 @@ const DocumentDetails = () => {
     if (!doc) return <div className="min-h-screen flex items-center justify-center">Document not found</div>;
 
     const currentPath = doc.status === 'Signed' && doc.signedPath ? doc.signedPath : doc.filePath;
-    const fileUrl = currentPath.startsWith('http') ? currentPath : `https://document-signature-app-u1zd.onrender.com/${currentPath.replace(/\\/g, '/')}`;
+    const fileUrl = `https://document-signature-app-u1zd.onrender.com/${currentPath.replace(/\\/g, '/')}`;
 
     return (
         <div className="min-h-screen bg-gray-50">
