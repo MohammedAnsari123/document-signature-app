@@ -72,8 +72,9 @@ This application solves these issues by providing a centralized digital workflow
 * **bcryptjs**: Password hashing
 * **@react-oauth/google** & **google-auth-library**: Google SSO authentication
 
-### 4.4 PDF Processing
+### 4.4 Processing & Storage
 * **pdf-lib**: Powerful backend library for manipulating and drawing text/images onto PDFs
+* **Cloudinary**: Cloud service for persistent document and signed asset storage
 
 ### 4.5 Deployment (Target)
 * **Frontend**: Vercel / Netlify
@@ -87,8 +88,8 @@ This application solves these issues by providing a centralized digital workflow
 ### 5.1 High-Level Architecture
 The system follows a standard Client-Server architecture:
 1. **Client → API → Database**: The React frontend communicates with the Express backend via RESTful APIs. The backend validates requests, processes business logic, and interacts with MongoDB.
-2. **File Upload Flow**: Users upload PDFs via FormData. Express stores the file on disk (or cloud) using Multer, and saves metadata in MongoDB.
-3. **Signature Rendering Flow**: The frontend determines the exact (x, y, page) coordinates of the signature. These coordinates, along with the base64 signature image/text, are sent to the backend. The backend uses `pdf-lib` to load the original PDF, embed the visual signature at the precise location, and save a new `signed-<filename>.pdf` file.
+2. **File Upload Flow**: Users upload PDFs via FormData. Express stores the file temporarily via Multer, uploads it directly to Cloudinary for permanent storage, and saves the secure URL metadata in MongoDB.
+3. **Signature Rendering Flow**: The frontend determines the exact (x, y, page) coordinates of the signature. These coordinates, along with the base64 signature image/text, are sent to the backend. The backend uses `axios` to download the cloud PDF, `pdf-lib` to embed the visual signature at the precise location, re-uploads the `signed-<filename>.pdf` to Cloudinary, and removes temp files.
 
 ### 5.2 Folder Structure
 ```text
@@ -128,8 +129,10 @@ document-signature-app/
 ### 6.2 Document Model
 * `_id`: ObjectId
 * `fileName`: String
-* `filePath`: String (Original uploaded file)
-* `signedPath`: String (Final signed file)
+* `filePath`: String (Original uploaded file secure URL)
+* `cloudinaryId`: String (Cloudinary public ID for the original file)
+* `signedPath`: String (Final signed file secure URL)
+* `signedCloudinaryId`: String (Cloudinary public ID for the signed file)
 * `ownerId`: ObjectId (Ref: User)
 * `status`: String (Pending | Signed | Rejected)
 * `sharedWith`: Array of Objects `[{ email, permission }]`
@@ -218,6 +221,11 @@ EMAIL_PASS=your_app_password
 
 # Authentication
 GOOGLE_CLIENT_ID=your_google_oauth_client_id
+
+# Cloud Storage
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 ---
@@ -228,9 +236,9 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id
 2. **Audit & Metadata**: An `AuditLog` entry is immediately created noting the upload timestamp and user.
 3. **Placing Annotations**: Users open the `SignatureEditor`, dragging text notes or drawn signatures from the sidebar onto the `react-pdf` rendered pages.
 4. **Coordinates Saved**: The React app tracks the absolute `x`, `y`, and `pageNumber` for every placed item.
-5. **Backend Processing**: Upon clicking "Save", the frontend sends an array of elements. The backend opens the original PDF file using `pdf-lib`.
+5. **Backend Processing**: Upon clicking "Save", the frontend sends an array of elements. The backend downloads the original PDF from Cloudinary into memory and uses `pdf-lib` to open it.
 6. **Embedding Data**: `pdf-lib` iterates over the pages, embedding base64 image data or drawing text at the translated PDF coordinates.
-7. **Status Update**: The backend saves a new `signed-<filename>.pdf`, updates the MongoDB record `status` to "Signed", and assigns the new physical file path.
+7. **Status Update**: The backend uploads the new buffer to Cloudinary as `signed-<filename>.pdf`, updates the MongoDB record `status` to "Signed", and assigns the new secure cloud URL.
 8. **Finalizing**: A final `AuditLog` entry marks the signature event, and the user can now download the secured record.
 
 ---
@@ -252,7 +260,9 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id
    * Push your backend folder to GitHub.
    * Connect to Render as a "Web Service".
    * Set the Build Command to `npm install` and Start Command to `node src/server.js`.
-   * Add all `.env` variables in the dashboard.
+   * Configure a free Cloudinary account for persistent document uploads.
+   * Add all `.env` variables in the Render dashboard, including `CLOUDINARY_*` keys.
+   * **Live API URL:** `https://document-signature-app-u1zd.onrender.com`
 3. **Frontend Hosting (Vercel/Netlify)**:
    * Push the frontend folder to GitHub.
    * Connect to Vercel. 
@@ -265,7 +275,6 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
 * **Multi-signer Workflow**: Advanced sequential signing workflows (e.g., Person A must sign, then Person B).
 * **Document Encryption**: Encrypting PDF buffers at rest using AES-256 before writing to storage.
-* **Cloud Storage**: Replacing local disk storage with AWS S3 buckets for highly scalable asset management.
 * **Digital Certificate Signing**: Applying an actual cryptographic PAdES digital certificate to the PDF upon finalization to lock it from future tampering natively in Adobe Acrobat.
 * **Custom Signature Drawing**: Integrating a canvas drawing pad on the frontend to allow users to smoothly hand-draw signatures using mouse/touch.
 
