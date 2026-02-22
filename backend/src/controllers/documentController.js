@@ -18,7 +18,7 @@ const uploadDocument = async (req, res) => {
 
         // Upload the file to Cloudinary
         const result = await cloudinary.uploader.upload(req.file.path, {
-            resource_type: 'raw',
+            resource_type: 'image',
             folder: 'docsign_uploads',
             use_filename: true,
             unique_filename: true,
@@ -167,7 +167,7 @@ const finalizeDocument = async (req, res) => {
 
         // Upload signed version to Cloudinary
         const result = await cloudinary.uploader.upload(tempSignedPath, {
-            resource_type: 'raw',
+            resource_type: 'image',
             folder: 'docsign_signed',
             use_filename: true,
             unique_filename: true,
@@ -437,7 +437,7 @@ const resetSignatures = async (req, res) => {
         // Delete the signed PDF file from Cloudinary and local (if any)
         if (doc.signedCloudinaryId) {
             try {
-                await cloudinary.uploader.destroy(doc.signedCloudinaryId, { resource_type: 'raw' });
+                await cloudinary.uploader.destroy(doc.signedCloudinaryId, { resource_type: 'image' });
             } catch (e) {
                 console.warn('Could not remove signed file from Cloudinary:', e.message);
             }
@@ -487,7 +487,7 @@ const deleteDocument = async (req, res) => {
         // Delete original file from Cloudinary
         if (doc.cloudinaryId) {
             try {
-                await cloudinary.uploader.destroy(doc.cloudinaryId, { resource_type: 'raw' });
+                await cloudinary.uploader.destroy(doc.cloudinaryId, { resource_type: 'image' });
             } catch (e) {
                 console.warn('Could not remove original file from Cloudinary:', e.message);
             }
